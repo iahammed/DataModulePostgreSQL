@@ -21,7 +21,7 @@ def process_song_file(cur, filepath):
 
 def process_log_file(cur, filepath):
     # open log file
-    df = pd.read_json(filepath, lines=True)
+    logsdf = pd.read_json(filepath, lines=True)
 
     # filter by NextSong action
     # df = 
@@ -83,14 +83,29 @@ def process_data(cur, conn, filepath, func):
         print('{}/{} files processed.'.format(i, num_files))
 
 def main():
-    conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
-    cur = conn.cursor()
-
-    process_data(cur, conn, filepath='data/song_data', func=process_song_file)
-    process_data(cur, conn, filepath='data/log_data', func=process_log_file)
-
-    conn.close()
-
-
+    try:
+        conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+    except Exception as error:
+        print ("Oops! An exception has occured  in connection:", error)
+        # set the connection to 'None' in case of error
+        conn = None
+    
+    # if the connection was successful
+    if conn != None:
+        cur = conn.cursor()
+        
+        try:
+            cur.execute(songplay_table_create)
+            cur.execute(user_table_create)
+            cur.execute(song_table_create)
+            cur.execute(artist_table_create)
+            cur.execute(time_table_create)
+            process_data(cur, conn, filepath='data/song_data', func=process_song_file)
+            process_data(cur, conn, filepath='data/log_data', func=process_log_file)            
+        except Exception as err:
+            print ("Oops! An exception has occured in cursor: ", err)
+            
+        conn.close()
+    
 if __name__ == "__main__":
     main()
